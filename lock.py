@@ -1,3 +1,7 @@
+# V0 => Unlock (0) / Lock (1)
+# V11 => passcode entered (to be replace by numpad input)
+# V12 => setup password (to sqlite)
+
 from gpiozero import Servo
 from time import sleep
 import blynklib
@@ -17,7 +21,24 @@ def read_virtual_pin_handler(pin):
     print(READ_PRINT_MSG.format(pin))
 #    blynk.virtual_write(pin, random.randint(0,255))
 
-@blynk.handle_event('write V*')
+@blynk.handle_event('write V0')
+def write_virtual_pin_handler(pin, value):
+    try:
+        print(WRITE_PRINT_MSG.format(pin, value))
+        print("write", pin, value)
+
+        if value[0] == '1':
+            print("entered 1 -> servo max")
+            servo.max()
+            sleep(3)
+            servo.min()
+
+            print("servo min")
+    except Exception as error:
+        print('Exception')
+        print(error)
+
+@blynk.handle_event('write V11')
 def write_virtual_pin_handler(pin, value):
     try:
         print(WRITE_PRINT_MSG.format(pin, value))
@@ -33,14 +54,18 @@ def write_virtual_pin_handler(pin, value):
             servo.min()
 
         conn.close()
+    except Exception as error:
+        print(error)
 
-        if value[0] == '1':
-            print("entered 1 -> servo max")
-            servo.max()
-            sleep(3)
-            servo.min()
-
-            print("servo min")
+@blynk.handle_event('write V12')
+def write_virtual_pin_handler(pin, value):
+    try:
+        print(WRITE_PRINT_MSG.format(pin, value))
+        print("write", pin, value)
+        conn = sqlite3.connect('data')
+        conn.execute('UPDATE passcode SET passcode = ?', (value[0],))
+        conn.commit()
+        conn.close()
     except Exception as error:
         print('Exception')
         print(error)
